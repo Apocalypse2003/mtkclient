@@ -778,7 +778,7 @@ class XFlashExt(metaclass=LogBase):
         setup.hwcode = self.config.hwcode
         return HwCrypto(setup, self.loglevel, self.config.gui)
 
-    def seccfg(self, lockflag):
+    def seccfg(self, lockflag, critical=False):
         if lockflag not in ["unlock", "lock"]:
             return False, "Valid flags are: unlock, lock"
         data, guid_gpt = self.xflash.partition.get_gpt(self.mtk.config.gpt_settings, "user")
@@ -819,7 +819,10 @@ class XFlashExt(metaclass=LogBase):
                 sc_org = SecCfgV4(hwc, self.mtk, self.custom_sej_hw)
             else:
                 return False, "Unknown lockstate or no lockstate"
-        ret, writedata = sc_org.create(lockflag=lockflag)
+        if isinstance(sc_org, SecCfgV4):
+            ret, writedata = sc_org.create(lockflag=lockflag, critical=critical)
+        else:
+            ret, writedata = sc_org.create(lockflag=lockflag)
         if ret is False:
             return False, writedata
         if self.xflash.writeflash(addr=partition.sector * self.mtk.daloader.daconfig.pagesize,
